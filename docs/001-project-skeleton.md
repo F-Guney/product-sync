@@ -1,4 +1,4 @@
-❯ Set up a Next.js 16 App Router project at the current directory using pnpm
+Set up a Next.js 16 App Router project at the current directory using pnpm
 
 1. Initialize: pnpm create next-app . --typescript --tailwind --app --src-dir
    --eslint --import-alias "@/*" (skip turbopack if it asks).
@@ -10,7 +10,7 @@
 4. Install TanStack Table: pnpm add @tanstack/react-table.
 5. Create prisma/schema.prisma exactly as in this Prisma block:               
    model Product {                                                               
-   id           Int       @id            // upstream DummyJSON id              
+   id           Int       @id                 
    title        String                                                         
    description  String                                                         
    category     String                                                         
@@ -22,17 +22,16 @@
    thumbnail    String?                                                        
    images       String[]                                                       
    tags         String[]                                                       
-   raw          Json                     // keep full upstream payload         
+   raw          Json                            
    importedAt   DateTime  @default(now())                                      
    updatedAt    DateTime  @updatedAt                                           
-   archivedAt   DateTime?                // bulk soft-delete target            
+   archivedAt   DateTime?                          
    @@index([category])                                                         
    }
 
 model ImportJob {                                                             
 id            String      @id @default(cuid())                              
-source        String                                          //            
-"dummyjson"                                                                   
+source        String                                                       
 status        JobStatus   @default(PENDING)                                 
 totalItems    Int?                                                          
 processed     Int         @default(0)                                       
@@ -42,7 +41,7 @@ startedAt     DateTime?
 finishedAt    DateTime?                                                     
 error         String?                                                       
 events        ImportEvent[]                                                 
-createdBy     String                                          // demo user  
+createdBy     String                                          
 id                                                                            
 createdAt     DateTime    @default(now())                                   
 }

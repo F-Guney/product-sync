@@ -1,5 +1,8 @@
 import { defineConfig } from "prisma/config";
 
+try { process.loadEnvFile(".env"); } catch {}
+try { process.loadEnvFile(".env.local"); } catch {}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
