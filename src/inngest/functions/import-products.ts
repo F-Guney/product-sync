@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { inngest } from "../client";
 
 const importRequestedEvent = eventType("products/import.requested" as const, {
-  schema: staticSchema<{ jobId: string }>(),
+  schema: staticSchema<{ jobId: string; simulateLatencyMs?: number }>(),
 });
 
 function productWriteFromDummy(
@@ -38,14 +38,14 @@ export const importProducts = inngest.createFunction(
     retries: 3,
   },
   async ({ event, step }) => {
-    const { jobId } = event.data;
+    const { jobId, simulateLatencyMs } = event.data;
 
     // a. Load job, fetch total, mark RUNNING, write start audit event.
     const { totalItems, chunkSize } = await step.run("load-job", async () => {
       const job = await prisma.importJob.findUniqueOrThrow({
         where: { id: jobId },
       });
-      const total = await fetchTotal();
+      const total = await fetchTotal(simulateLatencyMs);
       const totalChunks = Math.ceil(total / job.chunkSize);
       await prisma.$transaction([
         prisma.importJob.update({
@@ -80,7 +80,7 @@ export const importProducts = inngest.createFunction(
       const { skip, limit } = chunks[i];
       try {
         await step.run(`fetch-chunk-${i}`, async () => {
-          const page = await fetchProductsPage(skip, limit);
+          const page = await fetchProductsPage(skip, limit, simulateLatencyMs);
           await prisma.$transaction([
             ...page.products.map((p) =>
               prisma.product.upsert({
