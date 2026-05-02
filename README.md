@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# product-sync
 
-## Getting Started
+Product catalogue sync tool built with Next.js, Prisma, Inngest, and DummyJSON.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router, TypeScript strict mode)
+- **Prisma 7 + Neon** (Postgres, serverless driver adapter)
+- **Inngest** — durable background jobs with step retries
+- **Tailwind v4 + shadcn/ui**
+- **Zod** — runtime validation for actions, events, and external payloads
+
+## Local setup
+
+1. Copy `.env.example` to `.env.local` and fill in `DATABASE_URL` (Neon connection string) and, optionally, `INNGEST_EVENT_KEY` / `INNGEST_SIGNING_KEY` for cloud environments.
+
+2. Push the schema to your dev database:
+
+   ```bash
+   pnpm db:push
+   ```
+
+3. Start the dev server:
+
+   ```bash
+   pnpm dev
+   ```
+
+## Importing products (Inngest)
+
+The product-import pipeline runs as an Inngest durable function. In dev, run two processes side-by-side:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# 1. Next.js
 pnpm dev
-# or
-bun dev
+
+# 2. Inngest dev server, pointed at the local serve handler
+npx inngest-cli@latest dev -u http://localhost:3000/api/inngest
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open the Inngest dev UI at <http://localhost:8288>. Trigger an import either by:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Calling `triggerImport` from the `/imports` page (once it exists) — it creates an `ImportJob` row and fires `products/import.requested`, or
+2. Sending the event manually from the dev UI's **Send Event** panel with payload:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```json
+   { "data": { "jobId": "<existing-importjob-id>" } }
+   ```
 
-## Learn More
+   (Create an `ImportJob` row first via `pnpm db:seed` or a direct SQL insert with `status = 'PENDING'` and `createdBy = 'demo-user'`.)
 
-To learn more about Next.js, take a look at the following resources:
+Poll job progress at:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+GET /api/jobs/<jobId>
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Returns the job row plus the most recent 50 audit events. Status transitions: `PENDING → RUNNING → SUCCEEDED | PARTIAL | FAILED`.
 
-## Deploy on Vercel
+## Verification
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm lint && pnpm typecheck && pnpm build
+```
