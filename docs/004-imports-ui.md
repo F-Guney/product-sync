@@ -1,0 +1,6 @@
+1. src/app/imports/page.tsx (RSC): list all ImportJobs for DEMO_USER_ID, newest first. Show: created time, source, status Badge (color-coded), progress (processed / totalItems), duration, link to detail. Include a "Trigger import" form at the top (Server Action calling triggerImport, with chunkSize 30 default and an optional "simulate slow API (ms)" hidden behind an Advanced disclosure for the demo).
+2. src/app/imports/_components/job-row.tsx: client component that, when the job is PENDING or RUNNING, polls /api/jobs/[id] every 2 seconds via SWR or a simple useEffect+setInterval, and updates its own progress badge. Once status ∈ {SUCCEEDED, FAILED, PARTIAL} stop polling.
+3. src/app/imports/[id]/page.tsx: full job detail. Tabs: Overview (counters, durations) | Events (reverse-chronological log of ImportEvent rows). Re-uses the same polling component for live tail while RUNNING.
+4. Add a single nav header in src/app/layout.tsx with links Products / Imports.
+
+Commit as "feat: import history UI with live status polling".
